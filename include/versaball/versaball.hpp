@@ -30,7 +30,7 @@ namespace versaball
         void dynamic_reconfigure_cb(versaball::versaballConfig &config, uint32_t level);
 
     private:
-        typedef struct action_t{
+        struct action_t{
             std::string description;
             ros::Duration delay_start;
             ros::Duration delay_stop;
@@ -38,9 +38,8 @@ namespace versaball
         };
 
         bool _set_relay_state(uint8_t index, uint16_t state);
-        void _do_action(unsigned short& remaining_actions,
-            ros::Time start_time, ros::Time::now, ros::Duration delay,
-            bool state);
+        bool _do_action(ros::Time start_time, ros::Time now,
+            action_t current_action, bool state);
 
         ros::NodeHandle _nh;;
         // Handles for the service we advertise; deletion will unadvertise the service
