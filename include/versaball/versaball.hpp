@@ -10,6 +10,12 @@
 
 namespace versaball
 {
+    enum versaball_state{
+        neutral,
+        pressure,
+        jammed
+    };
+
     class VersaballNode
     {
     public:
@@ -29,7 +35,11 @@ namespace versaball
 
         void dynamic_reconfigure_cb(versaball::versaballConfig &config, uint32_t level);
 
+        versaball_state state();
+
     private:
+        versaball_state _current_state;
+
         struct action_t{
             std::string description;
             ros::Duration delay_start;
@@ -37,9 +47,9 @@ namespace versaball
             uint16_t index;
         };
 
-        bool _set_relay_state(uint8_t index, uint16_t state);
-        bool _do_action(ros::Time start_time, ros::Time now,
+        bool _timed_action(ros::Time start_time, ros::Time now,
             action_t current_action, bool state);
+        bool _set_phidgets_state(uint8_t index, uint16_t state);
 
         ros::NodeHandle _nh;;
         // Handles for the service we advertise; deletion will unadvertise the service
