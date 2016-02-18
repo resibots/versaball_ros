@@ -69,76 +69,6 @@ namespace versaball
         return success;
     }
 
-    bool VersaballNode::prepare_grasp_callback(std_srvs::Trigger::Request &req,
-        std_srvs::Trigger::Response &res)
-    {
-        if (neutral == _current_state)
-        {
-            _do_transition(_prepare_grasp_a);
-            _current_state = soft;
-            res.success = true;
-        }
-        else
-        {
-            res.success = false;
-            res.message = "Cannot prepare for grasping when in state " +
-                state_str();
-        }
-        return true;
-    }
-
-    bool VersaballNode::grasp_callback(std_srvs::Trigger::Request &req,
-        std_srvs::Trigger::Response &res)
-    {
-        if (soft == _current_state)
-        {
-            // grasp
-            _do_transition(_grasp_a);
-            // enable periodic air pumping
-            _current_state = jammed;
-            res.success = true;
-        }
-        else
-        {
-            res.success = false;
-            res.message = "Cannot grasp when in state " + state_str();
-        }
-        return true;
-    }
-
-    bool VersaballNode::release_callback(std_srvs::Trigger::Request &req,
-        std_srvs::Trigger::Response &res)
-    {
-        if (soft == _current_state)
-        {
-            // neutralise pressure
-            _do_transition(_release_prepare_grasp_a);
-            _current_state = neutral;
-            res.success = true;
-        }
-        else if (jammed == _current_state)
-        {
-            // disable periodic air pumping
-            // go positive pressure, then neutralise pressure
-            _do_transition(_release_grasp_a);
-            _current_state = neutral;
-            res.success = true;
-        }
-        else
-        {
-            res.success = false;
-            res.message = "Cannot release when in state " + state_str();
-        }
-        return true;
-    }
-
-    bool VersaballNode::state_callback(GetState::Request &req,
-        GetState::Response &res)
-    {
-        res.state = state_str();
-        return true;
-    }
-
     versaball_state VersaballNode::state()
     {
         return _current_state;
@@ -161,41 +91,6 @@ namespace versaball
         }
 
         return state;
-    }
-
-    void VersaballNode::dynamic_reconfigure_cb(versaball::versaballConfig &config, uint32_t level)
-    {
-        std::list<action_t>::iterator pg_a = _prepare_grasp_a.begin();
-        pg_a->offset = ros::Duration(config.pg_start_pressure*1e-3);       pg_a++;
-        pg_a->offset = ros::Duration(config.pg_open_presure_valve*1e-3);   pg_a++;
-        pg_a->offset = ros::Duration(config.pg_close_pressure_valve*1e-3); pg_a++;
-        pg_a->offset = ros::Duration(config.pg_stop_pressure*1e-3);
-
-        std::list<action_t>::iterator g_a = _grasp_a.begin();
-        g_a->offset = ros::Duration(config.g_start_void*1e-3);         g_a++;
-        g_a->offset = ros::Duration(config.g_open_void_valve*1e-3);    g_a++;
-        g_a->offset = ros::Duration(config.g_close_void_valve*1e-3);   g_a++;
-        g_a->offset = ros::Duration(config.g_stop_void*1e-3);
-
-        std::list<action_t>::iterator rg_a = _release_grasp_a.begin();
-        rg_a->offset = ros::Duration(config.rg_start_pressure*1e-3);        rg_a++;
-        rg_a->offset = ros::Duration(config.rg_open_presure_valve*1e-3);    rg_a++;
-        rg_a->offset = ros::Duration(config.rg_start_void*1e-3);            rg_a++;
-        rg_a->offset = ros::Duration(config.rg_open_void_valve*1e-3);       rg_a++;
-        rg_a->offset = ros::Duration(config.rg_close_void_valve*1e-3);      rg_a++;
-        rg_a->offset = ros::Duration(config.rg_stop_void*1e-3);             rg_a++;
-        rg_a->offset = ros::Duration(config.rg_close_pressure_valve*1e-3);  rg_a++;
-        rg_a->offset = ros::Duration(config.rg_stop_pressure*1e-3);
-
-        std::list<action_t>::iterator rpg_a = _release_prepare_grasp_a.begin();
-        rpg_a->offset = ros::Duration(config.rp_start_pressure*1e-3);       rpg_a++;
-        rpg_a->offset = ros::Duration(config.rp_open_presure_valve*1e-3);   rpg_a++;
-        rpg_a->offset = ros::Duration(config.rp_start_void*1e-3);           rpg_a++;
-        rpg_a->offset = ros::Duration(config.rp_open_void_valve*1e-3);      rpg_a++;
-        rpg_a->offset = ros::Duration(config.rp_close_void_valve*1e-3);     rpg_a++;
-        rpg_a->offset = ros::Duration(config.rp_stop_void*1e-3);            rpg_a++;
-        rpg_a->offset = ros::Duration(config.rp_close_pressure_valve*1e-3); rpg_a++;
-        rpg_a->offset = ros::Duration(config.rp_stop_pressure*1e-3);
     }
 
     void VersaballNode::_hardware_setup()
@@ -293,5 +188,110 @@ namespace versaball
             _nh.serviceClient<phidgets_interface_kit::setState>("/phidgets_ik/set_state");
 
         return client.call(service_call);
+    }
+
+    bool VersaballNode::prepare_grasp_callback(std_srvs::Trigger::Request &req,
+        std_srvs::Trigger::Response &res)
+    {
+        if (neutral == _current_state)
+        {
+            _do_transition(_prepare_grasp_a);
+            _current_state = soft;
+            res.success = true;
+        }
+        else
+        {
+            res.success = false;
+            res.message = "Cannot prepare for grasping when in state " +
+                state_str();
+        }
+        return true;
+    }
+
+    bool VersaballNode::grasp_callback(std_srvs::Trigger::Request &req,
+        std_srvs::Trigger::Response &res)
+    {
+        if (soft == _current_state)
+        {
+            // grasp
+            _do_transition(_grasp_a);
+            // enable periodic air pumping
+            _current_state = jammed;
+            res.success = true;
+        }
+        else
+        {
+            res.success = false;
+            res.message = "Cannot grasp when in state " + state_str();
+        }
+        return true;
+    }
+
+    bool VersaballNode::release_callback(std_srvs::Trigger::Request &req,
+        std_srvs::Trigger::Response &res)
+    {
+        if (soft == _current_state)
+        {
+            // neutralise pressure
+            _do_transition(_release_prepare_grasp_a);
+            _current_state = neutral;
+            res.success = true;
+        }
+        else if (jammed == _current_state)
+        {
+            // disable periodic air pumping
+            // go positive pressure, then neutralise pressure
+            _do_transition(_release_grasp_a);
+            _current_state = neutral;
+            res.success = true;
+        }
+        else
+        {
+            res.success = false;
+            res.message = "Cannot release when in state " + state_str();
+        }
+        return true;
+    }
+
+    bool VersaballNode::state_callback(GetState::Request &req,
+        GetState::Response &res)
+    {
+        res.state = state_str();
+        return true;
+    }
+
+    void VersaballNode::dynamic_reconfigure_cb(versaball::versaballConfig &config, uint32_t level)
+    {
+        std::list<action_t>::iterator pg_a = _prepare_grasp_a.begin();
+        pg_a->offset = ros::Duration(config.pg_start_pressure*1e-3);       pg_a++;
+        pg_a->offset = ros::Duration(config.pg_open_presure_valve*1e-3);   pg_a++;
+        pg_a->offset = ros::Duration(config.pg_close_pressure_valve*1e-3); pg_a++;
+        pg_a->offset = ros::Duration(config.pg_stop_pressure*1e-3);
+
+        std::list<action_t>::iterator g_a = _grasp_a.begin();
+        g_a->offset = ros::Duration(config.g_start_void*1e-3);         g_a++;
+        g_a->offset = ros::Duration(config.g_open_void_valve*1e-3);    g_a++;
+        g_a->offset = ros::Duration(config.g_close_void_valve*1e-3);   g_a++;
+        g_a->offset = ros::Duration(config.g_stop_void*1e-3);
+
+        std::list<action_t>::iterator rg_a = _release_grasp_a.begin();
+        rg_a->offset = ros::Duration(config.rg_start_pressure*1e-3);        rg_a++;
+        rg_a->offset = ros::Duration(config.rg_open_presure_valve*1e-3);    rg_a++;
+        rg_a->offset = ros::Duration(config.rg_start_void*1e-3);            rg_a++;
+        rg_a->offset = ros::Duration(config.rg_open_void_valve*1e-3);       rg_a++;
+        rg_a->offset = ros::Duration(config.rg_close_void_valve*1e-3);      rg_a++;
+        rg_a->offset = ros::Duration(config.rg_stop_void*1e-3);             rg_a++;
+        rg_a->offset = ros::Duration(config.rg_close_pressure_valve*1e-3);  rg_a++;
+        rg_a->offset = ros::Duration(config.rg_stop_pressure*1e-3);
+
+        std::list<action_t>::iterator rpg_a = _release_prepare_grasp_a.begin();
+        rpg_a->offset = ros::Duration(config.rp_start_pressure*1e-3);       rpg_a++;
+        rpg_a->offset = ros::Duration(config.rp_open_presure_valve*1e-3);   rpg_a++;
+        rpg_a->offset = ros::Duration(config.rp_start_void*1e-3);           rpg_a++;
+        rpg_a->offset = ros::Duration(config.rp_open_void_valve*1e-3);      rpg_a++;
+        rpg_a->offset = ros::Duration(config.rp_close_void_valve*1e-3);     rpg_a++;
+        rpg_a->offset = ros::Duration(config.rp_stop_void*1e-3);            rpg_a++;
+        rpg_a->offset = ros::Duration(config.rp_close_pressure_valve*1e-3); rpg_a++;
+        rpg_a->offset = ros::Duration(config.rp_stop_pressure*1e-3);
     }
 }
