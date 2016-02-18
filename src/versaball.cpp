@@ -127,9 +127,10 @@ namespace versaball
         return true;
     }
 
-    std::string VersaballNode::state_callback()
+    bool VersaballNode::state_callback()
     {
-        return state_str();
+        state_str();
+        return true;
     }
 
     versaball_state VersaballNode::state()
