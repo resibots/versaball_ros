@@ -38,7 +38,7 @@ namespace versaball
     bool VersaballNode::advertise_services()
     {
         bool success = false;
-        std::string phidgets_service = "phidgets_ik/set_states";
+        std::string phidgets_service = "phidgets_ik/set_state";
 
         ROS_INFO_STREAM("Waiting for \""<<phidgets_service<<"\" service"
             "(2 seconds).");
