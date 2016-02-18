@@ -8,7 +8,7 @@
 #include <dynamic_reconfigure/server.h>
 #include <versaball/versaballConfig.h>
 // Standard messages
-#include <std_srvs/Empty.h>
+#include <std_srvs/Trigger.h>
 
 namespace versaball
 {
@@ -67,16 +67,9 @@ namespace versaball
         **/
         bool advertise_services();
 
-        bool grasp_callback(std_srvs::Empty::Request &req,
-                      std_srvs::Empty::Response &res);
-        bool release_callback(std_srvs::Empty::Request &req,
-                       std_srvs::Empty::Response &res);
-
-        void dynamic_reconfigure_cb(versaball::versaballConfig &config, uint32_t level);
-
         // Give current state of the Versaball
-        // TODO: make a service out of this
         versaball_state state();
+        const std::string state_str();
 
     private:
         void _hardware_setup();
@@ -102,6 +95,16 @@ namespace versaball
         bool _execute_timed_action(const action_t& action, const ros::Duration& now);
         bool _set_phidgets_state(uint8_t index, uint16_t state);
 
+        bool prepare_grasp_callback(std_srvs::Trigger::Request &req,
+            std_srvs::Trigger::Response &res);
+        bool grasp_callback(std_srvs::Trigger::Request &req,
+            std_srvs::Trigger::Response &res);
+        bool release_callback(std_srvs::Trigger::Request &req,
+            std_srvs::Trigger::Response &res);
+        bool state_callback();
+
+        void dynamic_reconfigure_cb(versaball::versaballConfig &config, uint32_t level);
+
         versaball_state _current_state;
 
         // information about each effector and the related output
@@ -114,7 +117,7 @@ namespace versaball
 
         ros::NodeHandle _nh;;
         // Handles for the service we advertise; deletion will unadvertise the service
-        ros::ServiceServer _grasp_service, _release_service;
+        ros::ServiceServer _prepare_grasp_service, _grasp_service, _release_service;
 
         // Variables used by dynamic reconfigure
         dynamic_reconfigure::Server<versaball::versaballConfig> _dynamic_reconfigure_server;
