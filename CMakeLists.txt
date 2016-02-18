@@ -8,6 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
   dynamic_reconfigure
   roscpp
   rospy
+  message_generation
   std_msgs
   std_srvs
 )
@@ -58,9 +59,10 @@ find_package(catkin REQUIRED COMPONENTS
 #   Service1.srv
 #   Service2.srv
 # )
-# add_service_files(
-#   FILES
-# )
+add_service_files(
+  FILES
+  GetState.srv
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -77,6 +79,7 @@ find_package(catkin REQUIRED COMPONENTS
 # generate_messages(
 #   std_msgs
 # )
+generate_messages()
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##

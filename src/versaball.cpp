@@ -51,9 +51,14 @@ namespace versaball
                 &VersaballNode::grasp_callback, this);
             _release_service = _nh.advertiseService("release",
                 &VersaballNode::release_callback, this);
+            _state_service = _nh.advertiseService("get_state",
+                &VersaballNode::state_callback, this);
 
-            if (_prepare_grasp_service && _grasp_service && _release_service)
+            if (_prepare_grasp_service && _grasp_service && _release_service &&
+                _state_service)
+            {
                 success = true;
+            }
         }
         else
         {
@@ -127,9 +132,10 @@ namespace versaball
         return true;
     }
 
-    bool VersaballNode::state_callback()
+    bool VersaballNode::state_callback(GetState::Request &req,
+        GetState::Response &res)
     {
-        state_str();
+        res.state = state_str();
         return true;
     }
 

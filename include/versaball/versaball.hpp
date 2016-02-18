@@ -7,7 +7,9 @@
 // Dynamic reconfigure
 #include <dynamic_reconfigure/server.h>
 #include <versaball/versaballConfig.h>
-// Standard messages
+// Service specific to Versaball
+#include <versaball/GetState.h>
+// Standard services
 #include <std_srvs/Trigger.h>
 
 namespace versaball
@@ -94,7 +96,7 @@ namespace versaball
             std_srvs::Trigger::Response &res);
         bool release_callback(std_srvs::Trigger::Request &req,
             std_srvs::Trigger::Response &res);
-        bool state_callback();
+        bool state_callback(GetState::Request &req, GetState::Response &res);
 
         void dynamic_reconfigure_cb(versaball::versaballConfig &config, uint32_t level);
 
@@ -109,8 +111,10 @@ namespace versaball
             _release_prepare_grasp_a;
 
         ros::NodeHandle _nh;;
-        // Handles for the service we advertise; deletion will unadvertise the service
-        ros::ServiceServer _prepare_grasp_service, _grasp_service, _release_service;
+        // Handles for the service we advertise; deletion will unadvertise the
+        // service
+        ros::ServiceServer _prepare_grasp_service, _grasp_service,
+            _release_service, _state_service;
 
         // Variables used by dynamic reconfigure
         dynamic_reconfigure::Server<versaball::versaballConfig> _dynamic_reconfigure_server;
