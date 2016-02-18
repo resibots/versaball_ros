@@ -38,7 +38,7 @@ namespace versaball
         std::string phidgets_service = "phidgets_ik/set_states";
 
         ROS_INFO_STREAM("Waiting for \""<<phidgets_service<<"\" service"
-            "(2 seconds each).");
+            "(2 seconds).");
         if (ros::service::waitForService(phidgets_service, 2000))
         {
 
