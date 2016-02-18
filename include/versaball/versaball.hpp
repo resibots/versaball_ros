@@ -51,6 +51,16 @@ namespace versaball
 
     /**
 
+        Transition table for the actions requested to the Versaball:
+        | initial state |   action         |  final state |
+        |---------------|------------------|--------------|
+        | neutral       |   prepare_grasp  |   soft       |
+        | soft          |   grasp          |   jammed     |
+        | soft          |   release        |   neutral    |
+        | jammed        |   release        |   neutral    |
+        All other actions are forbidden. Requesting them will have no effect and
+        the response will contain `false` and an explanatory message.
+
         Note: According to [1], a service cannot be simultaneously called more
             than once
             [1]: http://answers.ros.org/question/11544/calling-a-ros-service-from-several-nodes-at-the-same-time/
@@ -73,23 +83,6 @@ namespace versaball
 
     private:
         void _hardware_setup();
-
-        /** Actions requested to the Versaball.
-
-            Transition table:
-            | start state  |   action         |   goal_state |
-            |--------------|------------------|--------------|
-            | neutral      |   prepare_grasp  |   soft       |
-            | soft         |   grasp          |   jammed     |
-            | soft         |   release        |   neutral    |
-            | jammed       |   release        |   neutral    |
-
-            @return true if this action is allowed in the current state, false
-                otherwise
-        **/
-        bool prepare_grasp();
-        bool grasp();
-        bool release();
 
         void _do_transition(std::list<action_t> actions_list);
         bool _execute_timed_action(const action_t& action, const ros::Duration& now);
