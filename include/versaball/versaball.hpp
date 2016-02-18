@@ -1,6 +1,8 @@
 #ifndef VERSABALL_H
 #define VERSABALL_H
 
+#include <list>
+
 #include <ros/ros.h>
 // Dynamic reconfigure
 #include <dynamic_reconfigure/server.h>
@@ -12,10 +14,47 @@ namespace versaball
 {
     enum versaball_state{
         neutral,
-        pressure,
+        soft,
         jammed
     };
 
+    /** An instance of this structure represents one of the four actuators (pump,
+        valve, each for pressure or void).
+
+        The index refers to the actual index on the Phidgets relay board, also
+        used for the phidgets_ik services.
+
+        The name is used to give contextual information in debug messages.
+    **/
+    struct effector_t{
+        effector_t(std::string name, uint16_t index):
+            name(name), index(index)
+        {}
+        std::string name;
+        uint16_t index;
+    };
+
+    /** An "action" represents a change in the state (active, inactive) of an
+        actuator (pump or valve), after some given time.
+
+        We use lists of actions to represent, for instance, the transition
+        between a soft (inflated, before grasp) Versaball and a jammed Versaball.
+    **/
+    struct action_t{
+        action_t(ros::Duration instant, bool output_state, effector_t &effector):
+            offset(offset), output_state(output_state), effector(effector)
+        {}
+        ros::Duration offset;
+        bool output_state;
+        effector_t &effector;
+    };
+
+    /**
+
+        Note: According to [1], a service cannot be simultaneously called more
+            than once
+            [1]: http://answers.ros.org/question/11544/calling-a-ros-service-from-several-nodes-at-the-same-time/
+    **/
     class VersaballNode
     {
     public:
@@ -35,32 +74,48 @@ namespace versaball
 
         void dynamic_reconfigure_cb(versaball::versaballConfig &config, uint32_t level);
 
+        // Give current state of the Versaball
+        // TODO: make a service out of this
         versaball_state state();
 
     private:
+        void _hardware_setup();
+
+        /** Actions requested to the Versaball.
+
+            Transition table:
+            | start state  |   action         |   goal_state |
+            |--------------|------------------|--------------|
+            | neutral      |   prepare_grasp  |   soft       |
+            | soft         |   grasp          |   jammed     |
+            | soft         |   release        |   neutral    |
+            | jammed       |   release        |   neutral    |
+
+            @return true if this action is allowed in the current state, false
+                otherwise
+        **/
+        bool prepare_grasp();
+        bool grasp();
+        bool release();
+
+        bool _timed_action(const action_t& action, const ros::Duration& now);
+        bool _set_phidgets_state(uint8_t index, uint16_t state);
+
         versaball_state _current_state;
 
-        struct action_t{
-            std::string description;
-            ros::Duration delay_start;
-            ros::Duration delay_stop;
-            uint16_t index;
-        };
+        // information about each effector and the related output
+        // (of phidgets_interface_kit)
+        effector_t _pressure_pump, _pressure_valve, _void_pump, _void_valve;
 
-        bool _timed_action(ros::Time start_time, ros::Time now,
-            action_t current_action, bool state);
-        bool _set_phidgets_state(uint8_t index, uint16_t state);
+        // lists of actions needed for each transition between two states
+        std::list<action_t> _prepare_grasp_a, _grasp_a, _release_grasp_a,
+            _release_prepare_grasp_a;
 
         ros::NodeHandle _nh;;
         // Handles for the service we advertise; deletion will unadvertise the service
         ros::ServiceServer _grasp_service, _release_service;
 
-        // times at which each step of a grasping or release phase has to be
-        // executed
-        ros::Duration _start_pressure, _open_presure_valve, _close_pressure_valve,
-            _stop_pressure, _start_void, _open_void_valve, _close_void_valve,
-            _stop_void;
-
+        // Variables used by dynamic reconfigure
         dynamic_reconfigure::Server<versaball::versaballConfig> _dynamic_reconfigure_server;
         dynamic_reconfigure::Server<versaball::versaballConfig>::CallbackType _dynamic_reconfigure_cb_t;
     };
