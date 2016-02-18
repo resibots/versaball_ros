@@ -62,30 +62,7 @@ namespace versaball
     bool VersaballNode::grasp_callback(std_srvs::Empty::Request &req,
                                  std_srvs::Empty::Response &res)
     {
-        // time at which we start the grasping sequence
-        ros::Time start_time = ros::Time::now();
-        // The loop bellow will run each millisecond (1000Hz), in theory
-        ros::Rate rate(1000);
-
-        std::list<action_t> actions_list = _prepare_grasp_a;
-
-        while (!actions_list.empty())
-        {
-            ros::Duration now = ros::Time::now() - start_time;
-
-            std::list<action_t>::iterator action;
-            action=actions_list.begin();
-            while (action!=actions_list.end())
-            {
-                if (_timed_action(*action, now))
-                    actions_list.erase(action++);
-                else
-                    ++action;
-            }
-
-            rate.sleep();
-        }
-
+        _do_transition(_prepare_grasp_a);
         return true;
     }
 
@@ -217,12 +194,41 @@ namespace versaball
             return false;
     }
 
-    bool VersaballNode::_timed_action(const action_t& action, const ros::Duration& now)
+    void VersaballNode::_do_transition(std::list<action_t> actions_list)
+    {
+        // time at which we start the grasping sequence
+        ros::Time start_time = ros::Time::now();
+        // The loop bellow will run each millisecond (1000Hz), in theory
+        ros::Rate rate(1000);
+
+        // Regularly check for each remaining action whether it's time to run it
+        while (!actions_list.empty())
+        {
+            ros::Duration relative_time = ros::Time::now() - start_time;
+
+            // Scan actions not yet executed
+            std::list<action_t>::iterator action;
+            action=actions_list.begin();
+            while (action!=actions_list.end())
+            {
+                // If it's time to execute it, do so and erase it from the list
+                if (_execute_timed_action(*action, relative_time))
+                    actions_list.erase(action++);
+                else
+                    ++action;
+            }
+
+            rate.sleep();
+        }
+    }
+
+    bool VersaballNode::_execute_timed_action(const action_t& action,
+        const ros::Duration& relative_time)
     {
         std::string description = std::string(action.output_state?"enable":"disable") + " "
             + action.effector.name;
 
-        if (action.offset <= now)
+        if (action.offset <= relative_time)
         {
             if (_set_phidgets_state(action.effector.index, action.output_state))
                 ROS_DEBUG_STREAM("successfully " << description);

@@ -98,7 +98,8 @@ namespace versaball
         bool grasp();
         bool release();
 
-        bool _timed_action(const action_t& action, const ros::Duration& now);
+        void _do_transition(std::list<action_t> actions_list);
+        bool _execute_timed_action(const action_t& action, const ros::Duration& now);
         bool _set_phidgets_state(uint8_t index, uint16_t state);
 
         versaball_state _current_state;
