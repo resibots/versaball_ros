@@ -1,8 +1,10 @@
 #ifndef VERSABALL_H
 #define VERSABALL_H
 
+// Standard library
 #include <list>
 
+// ROS-related
 #include <ros/ros.h>
 // Dynamic reconfigure
 #include <dynamic_reconfigure/server.h>
@@ -44,9 +46,9 @@ namespace versaball
     **/
     struct action_t{
         action_t(ros::Duration instant, bool output_state, effector_t &effector):
-            offset(offset), output_state(output_state), effector(effector)
+            trigger(trigger), output_state(output_state), effector(effector)
         {}
-        ros::Duration offset;
+        ros::Duration trigger;
         bool output_state;
         effector_t &effector;
     };
@@ -81,23 +83,40 @@ namespace versaball
 
         // Give current state of the Versaball
         versaball_state state();
-        const std::string state_str();
+        const std::string state_str(); // as a string
 
     private:
+        // define the sub-actions needed for each transition in our modest state
+        // machine
         void _hardware_setup();
 
+        // executes all actions in the provided list, in their timed order,
+        // performing the transition between two states
         void _do_transition(std::list<action_t> actions_list);
-        bool _execute_timed_action(const action_t& action, const ros::Duration& now);
+        // if the relative time is bigger than the trigger time of the action,
+        // executes it
+        // by "relative time", we mean relative to the start of the transition,
+        // when _do_transition is called
+        bool _execute_timed_action(const action_t& action,
+            const ros::Duration& relative_time);
+        // call a service of phidgets_interface_kit to set the state of one
+        // of its relays
         bool _set_phidgets_state(uint8_t index, uint16_t state);
 
-        bool prepare_grasp_callback(std_srvs::Trigger::Request &req,
+        // callbacks for the services offered by the Versaball
+        bool _prepare_grasp_callback(std_srvs::Trigger::Request &req,
             std_srvs::Trigger::Response &res);
-        bool grasp_callback(std_srvs::Trigger::Request &req,
+        bool _grasp_callback(std_srvs::Trigger::Request &req,
             std_srvs::Trigger::Response &res);
-        bool release_callback(std_srvs::Trigger::Request &req,
+        bool _release_callback(std_srvs::Trigger::Request &req,
             std_srvs::Trigger::Response &res);
-        bool state_callback(GetState::Request &req, GetState::Response &res);
+        bool _state_callback(GetState::Request &req, GetState::Response &res);
 
+        // callback periodically pumping some air out of the Versaball, to
+        // compensate for it's slight leaking
+        void _keep_grasp_callback(const ros::TimerEvent& event);
+
+        // callback for dynamic reconfigure (update the parameter values)
         void dynamic_reconfigure_cb(versaball::versaballConfig &config, uint32_t level);
 
         versaball_state _current_state;
@@ -111,10 +130,16 @@ namespace versaball
             _release_prepare_grasp_a;
 
         ros::NodeHandle _nh;;
-        // Handles for the service we advertise; deletion will unadvertise the
+        // handles for the service we advertise; deletion will unadvertise the
         // service
         ros::ServiceServer _prepare_grasp_service, _grasp_service,
             _release_service, _state_service;
+
+        // timings for the grasping state, when we regularly restart the void
+        // system:    time between calls    how long we suck air
+        ros::Duration _keep_grasp_period, _keep_grasp_duration;
+        // handle for the timed grasp keeping method
+        ros::Timer _keep_grasp_timer;
 
         // Variables used by dynamic reconfigure
         dynamic_reconfigure::Server<versaball::versaballConfig> _dynamic_reconfigure_server;
