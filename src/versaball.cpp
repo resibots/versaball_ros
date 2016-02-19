@@ -111,24 +111,17 @@ namespace versaball
         // put some air in the Versaball
         _release_grasp_a.push_back(action_t(ros::Duration(0), true,  _pressure_pump));
         _release_grasp_a.push_back(action_t(ros::Duration(0), true,  _pressure_valve));
-        // enable the void system, to equalise Versaball's pressure with
-        // atmospheric pressure
-        _release_grasp_a.push_back(action_t(ros::Duration(0), true,  _void_pump));
+        // equalise Versaball's pressure with atmospheric pressure
         _release_grasp_a.push_back(action_t(ros::Duration(0), true,  _void_valve));
         // stop it all
-        _release_grasp_a.push_back(action_t(ros::Duration(0), false, _void_pump));
         _release_grasp_a.push_back(action_t(ros::Duration(0), false, _void_valve));
         _release_grasp_a.push_back(action_t(ros::Duration(0), false, _pressure_pump));
         _release_grasp_a.push_back(action_t(ros::Duration(0), false, _pressure_valve));
 
         // Sub-actions for release (when in soft state)
-        _release_prepare_grasp_a.push_back(action_t(ros::Duration(0), true,  _pressure_pump));
         _release_prepare_grasp_a.push_back(action_t(ros::Duration(0), true,  _pressure_valve));
-        _release_prepare_grasp_a.push_back(action_t(ros::Duration(0), true,  _void_pump));
         _release_prepare_grasp_a.push_back(action_t(ros::Duration(0), true,  _void_valve));
-        _release_prepare_grasp_a.push_back(action_t(ros::Duration(0), false, _void_pump));
         _release_prepare_grasp_a.push_back(action_t(ros::Duration(0), false, _void_valve));
-        _release_prepare_grasp_a.push_back(action_t(ros::Duration(0), false, _pressure_pump));
         _release_prepare_grasp_a.push_back(action_t(ros::Duration(0), false, _pressure_valve));
     }
 
@@ -262,36 +255,34 @@ namespace versaball
 
     void VersaballNode::dynamic_reconfigure_cb(versaball::versaballConfig &config, uint32_t level)
     {
+        // For the grasping preparation
         std::list<action_t>::iterator pg_a = _prepare_grasp_a.begin();
-        pg_a->offset = ros::Duration(config.pg_start_pressure*1e-3);       pg_a++;
-        pg_a->offset = ros::Duration(config.pg_open_presure_valve*1e-3);   pg_a++;
-        pg_a->offset = ros::Duration(config.pg_close_pressure_valve*1e-3); pg_a++;
-        pg_a->offset = ros::Duration(config.pg_stop_pressure*1e-3);
+        pg_a->offset = ros::Duration(config.pg_start_pressure*1e-3);        pg_a++;
+        pg_a->offset = ros::Duration(config.pg_open_presure_valve*1e-3);    pg_a++;
+        pg_a->offset = ros::Duration(config.pg_stop_pressure*1e-3);         pg_a++;
+        pg_a->offset = ros::Duration(config.pg_close_pressure_valve*1e-3);
 
+        // For the grasping
         std::list<action_t>::iterator g_a = _grasp_a.begin();
-        g_a->offset = ros::Duration(config.g_start_void*1e-3);         g_a++;
-        g_a->offset = ros::Duration(config.g_open_void_valve*1e-3);    g_a++;
-        g_a->offset = ros::Duration(config.g_close_void_valve*1e-3);   g_a++;
-        g_a->offset = ros::Duration(config.g_stop_void*1e-3);
+        g_a->offset = ros::Duration(config.g_start_void*1e-3);          g_a++;
+        g_a->offset = ros::Duration(config.g_open_void_valve*1e-3);     g_a++;
+        g_a->offset = ros::Duration(config.g_stop_void*1e-3);           g_a++;
+        g_a->offset = ros::Duration(config.g_close_void_valve*1e-3);
 
+        // For the release when in jammed state (after a "grasp")
         std::list<action_t>::iterator rg_a = _release_grasp_a.begin();
         rg_a->offset = ros::Duration(config.rg_start_pressure*1e-3);        rg_a++;
         rg_a->offset = ros::Duration(config.rg_open_presure_valve*1e-3);    rg_a++;
-        rg_a->offset = ros::Duration(config.rg_start_void*1e-3);            rg_a++;
         rg_a->offset = ros::Duration(config.rg_open_void_valve*1e-3);       rg_a++;
         rg_a->offset = ros::Duration(config.rg_close_void_valve*1e-3);      rg_a++;
-        rg_a->offset = ros::Duration(config.rg_stop_void*1e-3);             rg_a++;
-        rg_a->offset = ros::Duration(config.rg_close_pressure_valve*1e-3);  rg_a++;
-        rg_a->offset = ros::Duration(config.rg_stop_pressure*1e-3);
+        rg_a->offset = ros::Duration(config.rg_stop_pressure*1e-3);         rg_a++;
+        rg_a->offset = ros::Duration(config.rg_close_pressure_valve*1e-3);
 
+        // For the release when in soft state (after a "prepare grasp")
         std::list<action_t>::iterator rpg_a = _release_prepare_grasp_a.begin();
-        rpg_a->offset = ros::Duration(config.rp_start_pressure*1e-3);       rpg_a++;
         rpg_a->offset = ros::Duration(config.rp_open_presure_valve*1e-3);   rpg_a++;
-        rpg_a->offset = ros::Duration(config.rp_start_void*1e-3);           rpg_a++;
         rpg_a->offset = ros::Duration(config.rp_open_void_valve*1e-3);      rpg_a++;
         rpg_a->offset = ros::Duration(config.rp_close_void_valve*1e-3);     rpg_a++;
-        rpg_a->offset = ros::Duration(config.rp_stop_void*1e-3);            rpg_a++;
-        rpg_a->offset = ros::Duration(config.rp_close_pressure_valve*1e-3); rpg_a++;
-        rpg_a->offset = ros::Duration(config.rp_stop_pressure*1e-3);
+        rpg_a->offset = ros::Duration(config.rp_close_pressure_valve*1e-3);
     }
 }
