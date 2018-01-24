@@ -1,5 +1,4 @@
-#include <phidgets_interface_kit/setStates.h> // TODO: remove this include
-#include <phidgets_interface_kit/setState.h>
+#include <phidgets_ik/SetDigitalOutput.h>
 
 #include <versaball/versaball.hpp>
 
@@ -40,12 +39,15 @@ namespace versaball
     bool VersaballNode::advertise_services()
     {
         bool success = false;
-        std::string phidgets_service = "phidgets_ik/set_state";
+        std::string phidgets_service = "/set_digital_output";
 
-        ROS_INFO_STREAM("Waiting for \""<<phidgets_service<<"\" service"
+        ROS_INFO_STREAM("Waiting for \"" << phidgets_service << "\" service"
             "(2 seconds).");
         if (ros::service::waitForService(phidgets_service, 2000))
         {
+            ROS_INFO("Service found");
+            _phidgets_client =
+                _nh.serviceClient<phidgets_ik::SetDigitalOutput>(phidgets_service);
 
             _prepare_grasp_service = _nh.advertiseService("prepare_grasp",
                 &VersaballNode::_prepare_grasp_callback, this);
@@ -175,16 +177,15 @@ namespace versaball
 
     bool VersaballNode::_set_phidgets_state(uint8_t index, uint16_t state)
     {
-        phidgets_interface_kit::setState service_call;
+        phidgets_ik::SetDigitalOutput service_call;
         service_call.request.index = index;
         service_call.request.state = state;
 
         // querry a service to set the state of one of the relays controlling
         // our valves and pumps
-        ros::ServiceClient client =
-            _nh.serviceClient<phidgets_interface_kit::setState>("/phidgets_ik/set_state");
+        bool call_status = _phidgets_client.call(service_call);
 
-        return client.call(service_call);
+        return call_status & service_call.response.success;
     }
 
     bool VersaballNode::_prepare_grasp_callback(std_srvs::Trigger::Request &req,

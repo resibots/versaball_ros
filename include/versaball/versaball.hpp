@@ -135,6 +135,8 @@ namespace versaball
         ros::ServiceServer _prepare_grasp_service, _grasp_service,
             _release_service, _state_service;
 
+        ros::ServiceClient _phidgets_client;
+
         // timings for the grasping state, when we regularly restart the void
         // system:    time between calls    how long we suck air
         ros::Duration _keep_grasp_period, _keep_grasp_duration;
