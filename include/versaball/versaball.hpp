@@ -14,9 +14,8 @@
 // Standard services
 #include <std_srvs/Trigger.h>
 
-namespace versaball
-{
-    enum versaball_state{
+namespace versaball {
+    enum versaball_state {
         neutral,
         soft,
         jammed
@@ -30,10 +29,10 @@ namespace versaball
 
         The name is used to give contextual information in debug messages.
     **/
-    struct effector_t{
-        effector_t(std::string name, uint16_t index):
-            name(name), index(index)
-        {}
+    struct effector_t {
+        effector_t(std::string name, uint16_t index) : name(name), index(index)
+        {
+        }
         std::string name;
         uint16_t index;
     };
@@ -44,13 +43,12 @@ namespace versaball
         We use lists of actions to represent, for instance, the transition
         between a soft (inflated, before grasp) Versaball and a jammed Versaball.
     **/
-    struct action_t{
-        action_t(ros::Duration instant, bool output_state, effector_t &effector):
-            trigger(trigger), output_state(output_state), effector(effector)
-        {}
+    struct action_t {
+        action_t(ros::Duration trigger, bool output_state, effector_t& effector)
+            : trigger(trigger), output_state(output_state), effector(effector) {}
         ros::Duration trigger;
         bool output_state;
-        effector_t &effector;
+        effector_t& effector;
     };
 
     /**
@@ -69,8 +67,7 @@ namespace versaball
             than once
             [1]: http://answers.ros.org/question/11544/calling-a-ros-service-from-several-nodes-at-the-same-time/
     **/
-    class VersaballNode
-    {
+    class VersaballNode {
     public:
         VersaballNode();
 
@@ -104,20 +101,20 @@ namespace versaball
         bool _set_phidgets_state(uint8_t index, uint16_t state);
 
         // callbacks for the services offered by the Versaball
-        bool _prepare_grasp_callback(std_srvs::Trigger::Request &req,
-            std_srvs::Trigger::Response &res);
-        bool _grasp_callback(std_srvs::Trigger::Request &req,
-            std_srvs::Trigger::Response &res);
-        bool _release_callback(std_srvs::Trigger::Request &req,
-            std_srvs::Trigger::Response &res);
-        bool _state_callback(GetState::Request &req, GetState::Response &res);
+        bool _prepare_grasp_callback(std_srvs::Trigger::Request& req,
+            std_srvs::Trigger::Response& res);
+        bool _grasp_callback(std_srvs::Trigger::Request& req,
+            std_srvs::Trigger::Response& res);
+        bool _release_callback(std_srvs::Trigger::Request& req,
+            std_srvs::Trigger::Response& res);
+        bool _state_callback(GetState::Request& req, GetState::Response& res);
 
         // callback periodically pumping some air out of the Versaball, to
         // compensate for it's slight leaking
         void _keep_grasp_callback(const ros::TimerEvent& event);
 
         // callback for dynamic reconfigure (update the parameter values)
-        void dynamic_reconfigure_cb(versaball::versaballConfig &config, uint32_t level);
+        void dynamic_reconfigure_cb(versaball::versaballConfig& config, uint32_t level);
 
         versaball_state _current_state;
 
@@ -129,7 +126,8 @@ namespace versaball
         std::list<action_t> _prepare_grasp_a, _grasp_a, _release_grasp_a,
             _release_prepare_grasp_a;
 
-        ros::NodeHandle _nh;;
+        ros::NodeHandle _nh;
+        ;
         // handles for the service we advertise; deletion will unadvertise the
         // service
         ros::ServiceServer _prepare_grasp_service, _grasp_service,
@@ -147,6 +145,6 @@ namespace versaball
         dynamic_reconfigure::Server<versaball::versaballConfig> _dynamic_reconfigure_server;
         dynamic_reconfigure::Server<versaball::versaballConfig>::CallbackType _dynamic_reconfigure_cb_t;
     };
-}
+} // namespace versaball
 
 #endif // VERSABALL_H
