@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   std_msgs
   std_srvs
+  phidgets_ik
 )
 
 ## System dependencies are found with CMake's conventions
