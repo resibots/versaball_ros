@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>versaball</name>
-  <version>0.0.0</version>
+  <version>1.0.0</version>
   <description>Grab and release an object with the Versaball</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
